@@ -1,0 +1,7 @@
+{
+  "name": "Copy of FACADE TECH Workforce Management",
+  "description": "A comprehensive attendance, salary, and project tracking system for Facade Tech, featuring AI-powered auditing for duplicate entries and salary reports.",
+  "requestFramePermissions": [
+    "geolocation"
+  ]
+}
