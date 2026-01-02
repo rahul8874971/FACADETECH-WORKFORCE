@@ -7,8 +7,9 @@ import AdvanceManager from './components/AdvanceManager';
 import AdminPanel from './components/AdminPanel';
 import EmployeeManagement from './components/EmployeeManagement';
 import ProjectManagement from './components/ProjectManagement';
+import PayoutManager from './components/PayoutManager';
 import Login from './components/Login';
-import { AppView, AttendanceEntry, AdvanceEntry, Employee, Project, AuthState } from './types';
+import { AppView, AttendanceEntry, AdvanceEntry, Employee, Project, AuthState, PayoutEntry } from './types';
 import * as storage from './services/storage';
 
 const App: React.FC = () => {
@@ -20,6 +21,7 @@ const App: React.FC = () => {
   const [projects, setProjects] = useState<Project[]>([]);
   const [attendance, setAttendance] = useState<AttendanceEntry[]>([]);
   const [advances, setAdvances] = useState<AdvanceEntry[]>([]);
+  const [payouts, setPayouts] = useState<PayoutEntry[]>([]);
 
   // Load Initial Data
   useEffect(() => {
@@ -27,6 +29,9 @@ const App: React.FC = () => {
     setProjects(storage.getProjects());
     setAttendance(storage.getAttendance());
     setAdvances(storage.getAdvances());
+    // Use a custom key for payouts since it's a new feature
+    const savedPayouts = localStorage.getItem('ft_payouts');
+    if (savedPayouts) setPayouts(JSON.parse(savedPayouts));
   }, []);
 
   // Sync with Storage
@@ -42,6 +47,9 @@ const App: React.FC = () => {
   useEffect(() => {
     storage.saveAdvances(advances);
   }, [advances]);
+  useEffect(() => {
+    localStorage.setItem('ft_payouts', JSON.stringify(payouts));
+  }, [payouts]);
 
   // Actions
   const addAttendance = (entry: Omit<AttendanceEntry, 'id' | 'timestamp' | 'createdBy'>) => {
@@ -72,14 +80,22 @@ const App: React.FC = () => {
     setAdvances(prev => prev.filter(a => a.id !== id));
   };
 
-  const addEmployee = (data: Omit<Employee, 'id'>) => {
-    const newEmp: Employee = {
-      ...data,
-      id: `emp-${Date.now()}`
+  const addPayout = (entry: Omit<PayoutEntry, 'id' | 'timestamp'>) => {
+    const newEntry: PayoutEntry = {
+      ...entry,
+      id: `pay-${Date.now()}`,
+      timestamp: Date.now()
     };
+    setPayouts(prev => [...prev, newEntry]);
+  };
+
+  const deletePayout = (id: string) => {
+    setPayouts(prev => prev.filter(p => p.id !== id));
+  };
+
+  const addEmployee = (data: Omit<Employee, 'id'>) => {
+    const newEmp: Employee = { ...data, id: `emp-${Date.now()}` };
     setEmployees(prev => [...prev, newEmp]);
-    
-    // Create initial advance log if exists
     if (data.initialAdvance && data.initialAdvance > 0) {
       addAdvance({
         employeeId: newEmp.id,
@@ -145,6 +161,18 @@ const App: React.FC = () => {
             entries={advances} 
             onAdd={addAdvance} 
             onDelete={deleteAdvance} 
+            auth={auth}
+          />
+        );
+      case 'payouts':
+        return (
+          <PayoutManager
+            employees={employees}
+            attendance={attendance}
+            advances={advances}
+            payouts={payouts}
+            onAdd={addPayout}
+            onDelete={deletePayout}
             auth={auth}
           />
         );

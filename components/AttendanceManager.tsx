@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { AttendanceEntry, Employee, Project, AuthState } from '../types';
+import { AttendanceEntry, Employee, Project, AuthState, AttendanceStatus } from '../types';
 
 interface AttendanceManagerProps {
   employees: Employee[];
@@ -18,16 +18,24 @@ const AttendanceManager: React.FC<AttendanceManagerProps> = ({ employees, projec
   const [employeeId, setEmployeeId] = useState('');
   const [projectId, setProjectId] = useState('');
   const [date, setDate] = useState(today);
+  const [status, setStatus] = useState<AttendanceStatus>('present');
   const [regularHours, setRegularHours] = useState(8);
   const [overtimeHours, setOvertimeHours] = useState(0);
   const [error, setError] = useState('');
 
-  // Force today's date if supervisor
+  // Auto-adjust hours based on status
   useEffect(() => {
-    if (!isAdmin) {
-      setDate(today);
+    switch(status) {
+      case 'present': setRegularHours(8); break;
+      case 'half-day': setRegularHours(4); break;
+      case 'absent': 
+      case 'leave': setRegularHours(0); break;
     }
-  }, [auth.role, isAdmin, today]);
+  }, [status]);
+
+  useEffect(() => {
+    if (!isAdmin) setDate(today);
+  }, [isAdmin, today]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -35,176 +43,174 @@ const AttendanceManager: React.FC<AttendanceManagerProps> = ({ employees, projec
 
     if (!employeeId || !projectId || !date) return;
 
-    // Check for duplicate entry for this employee on this date
-    // Check against ALL entries to prevent same-day double marking across different supervisors
-    const existingEntry = entries.find(
-      (entry) => entry.employeeId === employeeId && entry.date === date
-    );
-
+    const existingEntry = entries.find(entry => entry.employeeId === employeeId && entry.date === date);
     if (existingEntry) {
-      const empName = employees.find(emp => emp.id === employeeId)?.name || 'This employee';
-      setError(`Attendance already marked for ${empName} on ${date}.`);
+      setError(`Attendance for this employee has already been marked for today.`);
       return;
     }
 
-    onAdd({ employeeId, projectId, date, regularHours, overtimeHours });
+    onAdd({ employeeId, projectId, date, status, regularHours, overtimeHours });
     setEmployeeId('');
     setProjectId('');
-    // Reset date to today if supervisor, otherwise keep selected
-    if (!isAdmin) setDate(today);
+    setStatus('present');
+    setOvertimeHours(0);
   };
 
-  // Filter entries so supervisors only see their own logs
-  const visibleEntries = isAdmin 
-    ? entries 
-    : entries.filter(e => e.createdBy === auth.userId);
+  const visibleEntries = isAdmin ? entries : entries.filter(e => e.createdBy === auth.userId);
+
+  const getStatusBadge = (s: AttendanceStatus) => {
+    switch(s) {
+      case 'present': return 'bg-emerald-100 text-emerald-700 border-emerald-200';
+      case 'half-day': return 'bg-amber-100 text-amber-700 border-amber-200';
+      case 'absent': return 'bg-rose-100 text-rose-700 border-rose-200';
+      case 'leave': return 'bg-blue-100 text-blue-700 border-blue-200';
+      default: return 'bg-slate-100 text-slate-500';
+    }
+  };
 
   return (
-    <div className="space-y-8">
-      <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-        <div className="flex justify-between items-center mb-4">
-          <h3 className="text-lg font-semibold flex items-center space-x-2">
-            <span>Log Daily Attendance</span>
-          </h3>
-          {!isAdmin && (
-            <span className="text-[10px] font-bold bg-amber-100 text-amber-700 px-2 py-1 rounded uppercase tracking-tighter">
-              Restricted to Current Date Only
-            </span>
-          )}
-        </div>
+    <div className="space-y-6">
+      <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+        <h3 className="text-lg font-black text-slate-800 mb-6 flex items-center">
+          <span className="mr-2">📝</span> Log Daily Attendance
+        </h3>
 
         {error && (
-          <div className="mb-4 p-3 bg-rose-50 border border-rose-200 text-rose-600 text-sm rounded-lg font-medium flex items-center animate-pulse">
-            <span className="mr-2">⚠️</span> {error}
+          <div className="mb-6 p-4 bg-rose-50 border border-rose-200 text-rose-700 text-xs font-black rounded-xl uppercase tracking-wider flex items-center">
+            <span className="mr-2 text-lg">⚠️</span> {error}
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Employee</label>
+        <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+          <div className="lg:col-span-2">
+            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Employee Name</label>
             <select
               value={employeeId}
-              onChange={(e) => {
-                setEmployeeId(e.target.value);
-                setError('');
-              }}
-              className="w-full border-slate-300 rounded-lg shadow-sm focus:border-blue-500 focus:ring-blue-500"
+              onChange={(e) => { setEmployeeId(e.target.value); setError(''); }}
+              className="w-full border-slate-200 rounded-xl bg-slate-50 focus:bg-white focus:ring-2 focus:ring-blue-500 transition-all font-bold py-3"
               required
             >
-              <option value="">Select Employee</option>
-              {employees.map(emp => <option key={emp.id} value={emp.id}>{emp.name}</option>)}
+              <option value="">Select Staff</option>
+              {employees.map(emp => <option key={emp.id} value={emp.id}>{emp.name} ({emp.role})</option>)}
             </select>
           </div>
+
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Project</label>
+            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Project Site</label>
             <select
               value={projectId}
               onChange={(e) => setProjectId(e.target.value)}
-              className="w-full border-slate-300 rounded-lg shadow-sm focus:border-blue-500 focus:ring-blue-500"
+              className="w-full border-slate-200 rounded-xl bg-slate-50 focus:bg-white focus:ring-2 focus:ring-blue-500 transition-all font-bold py-3"
               required
             >
               <option value="">Select Project</option>
               {projects.map(proj => <option key={proj.id} value={proj.id}>{proj.name}</option>)}
             </select>
           </div>
+
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Date</label>
+            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Date</label>
             <input
               type="date"
               value={date}
               max={today}
               disabled={!isAdmin}
-              onChange={(e) => {
-                setDate(e.target.value);
-                setError('');
-              }}
-              className={`w-full border-slate-300 rounded-lg shadow-sm focus:border-blue-500 focus:ring-blue-500 ${!isAdmin ? 'bg-slate-50 cursor-not-allowed text-slate-500' : ''}`}
+              onChange={(e) => setDate(e.target.value)}
+              className="w-full border-slate-200 rounded-xl bg-slate-50 disabled:text-slate-400 focus:bg-white focus:ring-2 focus:ring-blue-500 font-bold py-3"
               required
             />
           </div>
+
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Regular Hours (Max 8)</label>
-            <input
-              type="number"
-              value={regularHours}
-              max={8}
-              min={0}
-              onChange={(e) => setRegularHours(Number(e.target.value))}
-              className="w-full border-slate-300 rounded-lg shadow-sm focus:border-blue-500 focus:ring-blue-500"
+            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Attendance Status</label>
+            <select
+              value={status}
+              onChange={(e) => setStatus(e.target.value as AttendanceStatus)}
+              className="w-full border-slate-200 rounded-xl bg-slate-50 focus:bg-white focus:ring-2 focus:ring-blue-500 transition-all font-bold py-3"
               required
-            />
+            >
+              <option value="present">Present (Full Day)</option>
+              <option value="half-day">Half Day (4h)</option>
+              <option value="absent">Absent</option>
+              <option value="leave">Paid Leave</option>
+            </select>
           </div>
+
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Overtime Hours</label>
+            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">OT Hours</label>
             <input
               type="number"
               value={overtimeHours}
               min={0}
               onChange={(e) => setOvertimeHours(Number(e.target.value))}
-              className="w-full border-slate-300 rounded-lg shadow-sm focus:border-blue-500 focus:ring-blue-500"
+              className="w-full border-slate-200 rounded-xl bg-slate-50 focus:bg-white focus:ring-2 focus:ring-blue-500 transition-all font-bold py-3"
               required
             />
           </div>
-          <div className="flex items-end">
+
+          <div className="lg:col-span-2 flex items-end">
             <button
               type="submit"
-              className="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition font-medium shadow-md"
+              className="w-full bg-slate-900 text-white py-3.5 rounded-xl hover:bg-black transition font-black text-xs uppercase tracking-widest shadow-xl shadow-slate-200"
             >
-              Submit Attendance
+              Mark Attendance
             </button>
           </div>
         </form>
       </div>
 
-      <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-        <div className="p-4 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
-           <h4 className="text-sm font-bold text-slate-600 uppercase tracking-widest">
-             {isAdmin ? 'All Attendance Logs' : 'My Recent Logs'}
+      <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+        <div className="p-5 border-b border-slate-50 bg-slate-50/30 flex justify-between items-center">
+           <h4 className="text-xs font-black text-slate-500 uppercase tracking-widest">
+             Activity Registry
            </h4>
-           {!isAdmin && <span className="text-[10px] text-slate-400 font-bold uppercase italic">Read-only after submission</span>}
         </div>
         <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
+          <table className="w-full text-left">
             <thead>
               <tr className="bg-slate-50 border-b border-slate-200">
-                <th className="px-6 py-3 text-xs font-semibold text-slate-500 uppercase">Employee</th>
-                <th className="px-6 py-3 text-xs font-semibold text-slate-500 uppercase">Project</th>
-                <th className="px-6 py-3 text-xs font-semibold text-slate-500 uppercase">Date</th>
-                <th className="px-6 py-3 text-xs font-semibold text-slate-500 uppercase text-center">Hours</th>
-                <th className="px-6 py-3 text-xs font-semibold text-slate-500 uppercase text-center">OT</th>
-                {isAdmin && <th className="px-6 py-3 text-xs font-semibold text-slate-500 uppercase text-right">Action</th>}
+                <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase">Staff</th>
+                <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase">Project</th>
+                <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase">Date</th>
+                <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase text-center">Status</th>
+                <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase text-center">Regular</th>
+                <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase text-center">OT</th>
+                {isAdmin && <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase text-right">Action</th>}
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
               {visibleEntries.length === 0 ? (
                 <tr>
-                  <td colSpan={isAdmin ? 6 : 5} className="px-6 py-12 text-center text-slate-400 font-medium">
-                    No records found matching your profile.
+                  <td colSpan={isAdmin ? 7 : 6} className="px-6 py-20 text-center text-slate-400 italic">
+                    No attendance logs found for this period.
                   </td>
                 </tr>
               ) : (
-                visibleEntries.slice().reverse().slice(0, 50).map(entry => {
+                visibleEntries.slice().reverse().map(entry => {
                   const emp = employees.find(e => e.id === entry.employeeId);
                   const proj = projects.find(p => p.id === entry.projectId);
                   return (
-                    <tr key={entry.id} className="hover:bg-slate-50 transition-colors">
-                      <td className="px-6 py-4 font-medium text-slate-900">{emp?.name || 'Unknown'}</td>
-                      <td className="px-6 py-4 text-slate-600">{proj?.name || 'Unknown'}</td>
-                      <td className="px-6 py-4 text-slate-600 font-medium">{entry.date}</td>
-                      <td className="px-6 py-4 text-center">{entry.regularHours}h</td>
+                    <tr key={entry.id} className="hover:bg-blue-50/20 transition-colors">
+                      <td className="px-6 py-4">
+                        <p className="font-bold text-slate-900">{emp?.name || 'Unknown'}</p>
+                        <p className="text-[10px] text-slate-400 font-bold uppercase">{emp?.role}</p>
+                      </td>
+                      <td className="px-6 py-4 text-slate-600 font-medium">{proj?.name || '-'}</td>
+                      <td className="px-6 py-4 text-slate-900 font-black text-sm">{entry.date}</td>
                       <td className="px-6 py-4 text-center">
-                        <span className={`px-2 py-0.5 rounded text-xs ${entry.overtimeHours > 0 ? 'bg-amber-100 text-amber-700 font-bold' : 'text-slate-400'}`}>
+                        <span className={`px-2 py-1 rounded-lg text-[9px] font-black uppercase border ${getStatusBadge(entry.status)}`}>
+                          {entry.status}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 text-center font-bold text-slate-600">{entry.regularHours}h</td>
+                      <td className="px-6 py-4 text-center">
+                        <span className={`px-2 py-0.5 rounded text-xs font-bold ${entry.overtimeHours > 0 ? 'bg-amber-100 text-amber-700' : 'text-slate-300'}`}>
                           {entry.overtimeHours}h
                         </span>
                       </td>
                       {isAdmin && (
                         <td className="px-6 py-4 text-right">
-                          <button 
-                            onClick={() => onDelete(entry.id)}
-                            className="text-rose-600 hover:text-rose-800 text-sm font-semibold transition"
-                          >
-                            Delete
-                          </button>
+                          <button onClick={() => onDelete(entry.id)} className="text-rose-500 hover:text-rose-700 text-lg">🗑️</button>
                         </td>
                       )}
                     </tr>
