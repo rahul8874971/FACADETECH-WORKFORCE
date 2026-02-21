@@ -83,27 +83,27 @@ const AdvanceManager: React.FC<AdvanceManagerProps> = ({ employees, entries, onA
   return (
     <div className="space-y-6">
       {/* Analytics Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="bg-slate-900 text-white p-6 rounded-2xl shadow-xl border border-slate-800">
-          <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Company Liquidity</p>
-          <h4 className="text-2xl font-black">₹{currentMonthTotal.toLocaleString()}</h4>
-          <p className="text-[10px] text-slate-500 mt-2 font-medium">Total advances disbursed this month</p>
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="bg-slate-900 text-white p-5 md:p-6 rounded-2xl shadow-xl border border-slate-800">
+          <p className="text-[10px] md:text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Liquidity</p>
+          <h4 className="text-xl md:text-2xl font-black">₹{currentMonthTotal.toLocaleString()}</h4>
+          <p className="text-[8px] md:text-[10px] text-slate-500 mt-2 font-medium">Monthly disbursement total</p>
         </div>
         
         {selectedEmployee && (
-          <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 md:col-span-2 flex flex-col justify-between">
+          <div className="bg-white p-5 md:p-6 rounded-2xl shadow-sm border border-slate-200 sm:col-span-2 flex flex-col justify-between">
             <div className="flex justify-between items-start">
               <div>
-                <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Limit Utilization: {selectedEmployee.name}</p>
-                <h4 className="text-xl font-black text-slate-800">
+                <p className="text-[10px] md:text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Limit: {selectedEmployee.name}</p>
+                <h4 className="text-lg md:text-xl font-black text-slate-800">
                   ₹{monthlyUtilization.toLocaleString()} / ₹{(selectedEmployee.monthlySalary * ADVANCE_CAP_PERCENTAGE).toLocaleString()}
                 </h4>
               </div>
-              <span className={`text-[10px] font-black px-2 py-1 rounded-full uppercase border ${getRiskColor(monthlyUtilization, selectedEmployee.monthlySalary)}`}>
+              <span className={`text-[8px] md:text-[10px] font-black px-2 py-1 rounded-full uppercase border ${getRiskColor(monthlyUtilization, selectedEmployee.monthlySalary)}`}>
                 {Math.round((monthlyUtilization / selectedEmployee.monthlySalary) * 100)}% Used
               </span>
             </div>
-            <div className="w-full bg-slate-100 h-2 rounded-full mt-4 overflow-hidden">
+            <div className="w-full bg-slate-100 h-1.5 md:h-2 rounded-full mt-4 overflow-hidden">
               <div 
                 className={`h-full transition-all duration-500 ${monthlyUtilization / (selectedEmployee.monthlySalary * ADVANCE_CAP_PERCENTAGE) > 0.8 ? 'bg-rose-500' : 'bg-blue-600'}`}
                 style={{ width: `${Math.min(100, (monthlyUtilization / (selectedEmployee.monthlySalary * ADVANCE_CAP_PERCENTAGE)) * 100)}%` }}
@@ -212,7 +212,9 @@ const AdvanceManager: React.FC<AdvanceManagerProps> = ({ employees, entries, onA
              />
            </div>
         </div>
-        <div className="overflow-x-auto">
+
+        {/* Desktop Table */}
+        <div className="hidden md:block overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-slate-50/50 border-b border-slate-200">
@@ -268,6 +270,40 @@ const AdvanceManager: React.FC<AdvanceManagerProps> = ({ employees, entries, onA
               )}
             </tbody>
           </table>
+        </div>
+
+        {/* Mobile Card List */}
+        <div className="md:hidden divide-y divide-slate-100">
+          {visibleEntries.length === 0 ? (
+            <div className="p-10 text-center text-slate-400 italic text-sm">No transactions found.</div>
+          ) : (
+            visibleEntries.slice().reverse().map(entry => {
+              const emp = employees.find(e => e.id === entry.employeeId);
+              const riskRatio = emp ? entry.amount / emp.monthlySalary : 0;
+              return (
+                <div key={entry.id} className="p-4 space-y-3">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <p className="font-bold text-slate-900">{emp?.name || 'Unknown'}</p>
+                      <p className="text-[10px] text-slate-400 font-bold uppercase tracking-tight">{entry.date}</p>
+                    </div>
+                    <span className="text-slate-900 font-black">₹{entry.amount.toLocaleString()}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className={`px-2 py-1 rounded-lg text-[9px] font-black uppercase border ${getRiskColor(entry.amount, emp?.monthlySalary || 1000000)}`}>
+                      {riskRatio > 0.4 ? '🚨 High' : riskRatio > 0.2 ? '⚠️ Med' : '✅ Low'}
+                    </span>
+                    <div className="flex items-center space-x-3">
+                      <p className="text-[10px] text-slate-500 italic truncate max-w-[150px]">{entry.reason || 'No notes'}</p>
+                      {isAdmin && (
+                        <button onClick={() => onDelete(entry.id)} className="p-2 bg-rose-50 text-rose-500 rounded-lg">🗑️</button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              );
+            })
+          )}
         </div>
       </div>
     </div>

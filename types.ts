@@ -12,6 +12,7 @@ export interface Employee {
   isManager?: boolean; // New: designated manager with report access
   userId?: string;
   password?: string;
+  mustChangePassword?: boolean;
   initialAdvance?: number;
 }
 
@@ -54,7 +55,7 @@ export interface PayoutEntry {
   timestamp: number;
 }
 
-export type UserRole = 'admin' | 'manager' | 'supervisor' | null;
+export type UserRole = 'admin' | 'manager' | 'supervisor' | 'worker' | null;
 
 export interface AuthState {
   role: UserRole;
@@ -62,4 +63,4 @@ export interface AuthState {
   userName?: string;
 }
 
-export type AppView = 'dashboard' | 'attendance' | 'advances' | 'payouts' | 'admin' | 'projects' | 'employees';
+export type AppView = 'dashboard' | 'attendance' | 'advances' | 'payouts' | 'admin' | 'projects' | 'employees' | 'my-profile';

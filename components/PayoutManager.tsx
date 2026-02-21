@@ -157,7 +157,9 @@ const PayoutManager: React.FC<PayoutManagerProps> = ({ employees, attendance, ad
              <h4 className="text-xs font-black text-slate-500 uppercase tracking-widest">Monthly Payroll Ledger</h4>
              <span className="text-[10px] font-black bg-blue-100 text-blue-700 px-2 py-0.5 rounded uppercase">{new Date(selectedMonth + '-01').toLocaleString('default', { month: 'long', year: 'numeric' })}</span>
           </div>
-          <div className="overflow-x-auto">
+
+          {/* Desktop Table */}
+          <div className="hidden md:block overflow-x-auto">
             <table className="w-full text-left">
               <thead>
                 <tr className="bg-slate-50 text-[10px] font-black text-slate-400 uppercase">
@@ -192,6 +194,39 @@ const PayoutManager: React.FC<PayoutManagerProps> = ({ employees, attendance, ad
               </tbody>
             </table>
           </div>
+
+          {/* Mobile Card List */}
+          <div className="md:hidden divide-y divide-slate-100">
+            {payrollData.map(emp => (
+              <div key={emp.id} className="p-4 space-y-3">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <p className="font-bold text-slate-900">{emp.name}</p>
+                    <p className="text-[9px] text-slate-400 font-bold uppercase">{emp.role}</p>
+                  </div>
+                  {emp.netPayable > 0 ? (
+                    <span className="text-blue-600 font-black text-sm">₹{emp.netPayable.toLocaleString()}</span>
+                  ) : (
+                    <span className="text-emerald-500 text-[10px] font-black uppercase">✅ Settled</span>
+                  )}
+                </div>
+                <div className="grid grid-cols-3 gap-2 text-center">
+                  <div className="p-2 bg-slate-50 rounded-lg">
+                    <p className="text-[8px] font-black text-slate-400 uppercase">Earned</p>
+                    <p className="text-[10px] font-bold text-slate-700">₹{Math.round(emp.earned).toLocaleString()}</p>
+                  </div>
+                  <div className="p-2 bg-slate-50 rounded-lg">
+                    <p className="text-[8px] font-black text-slate-400 uppercase">Advances</p>
+                    <p className="text-[10px] font-bold text-rose-500">₹{emp.totalAdv.toLocaleString()}</p>
+                  </div>
+                  <div className="p-2 bg-slate-50 rounded-lg">
+                    <p className="text-[8px] font-black text-slate-400 uppercase">Paid</p>
+                    <p className="text-[10px] font-bold text-emerald-600">₹{emp.alreadyPaid.toLocaleString()}</p>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
 
@@ -200,7 +235,9 @@ const PayoutManager: React.FC<PayoutManagerProps> = ({ employees, attendance, ad
         <div className="p-5 border-b border-slate-50 flex justify-between items-center bg-slate-50/20">
           <h4 className="text-xs font-black text-slate-500 uppercase tracking-widest">Historical Payout Registry</h4>
         </div>
-        <div className="overflow-x-auto">
+
+        {/* Desktop Table */}
+        <div className="hidden md:block overflow-x-auto">
           <table className="w-full text-left">
             <thead>
               <tr className="bg-slate-50 text-[10px] font-black text-slate-400 uppercase">
@@ -242,6 +279,37 @@ const PayoutManager: React.FC<PayoutManagerProps> = ({ employees, attendance, ad
               )}
             </tbody>
           </table>
+        </div>
+
+        {/* Mobile Card List */}
+        <div className="md:hidden divide-y divide-slate-100">
+          {payouts.length === 0 ? (
+            <div className="p-10 text-center text-slate-300 italic text-sm">No disbursement history.</div>
+          ) : (
+            payouts.slice().reverse().map(p => {
+              const emp = employees.find(e => e.id === p.employeeId);
+              return (
+                <div key={p.id} className="p-4 space-y-3">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <p className="font-bold text-slate-900">{emp?.name || 'Unknown'}</p>
+                      <p className="text-[10px] text-slate-400 font-bold uppercase">{new Date(p.month + '-01').toLocaleString('default', { month: 'short', year: 'numeric' })}</p>
+                    </div>
+                    <span className="font-black text-emerald-600 text-sm">₹{p.amount.toLocaleString()}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="px-2 py-0.5 rounded bg-slate-100 text-[9px] font-black uppercase text-slate-600">{p.paymentMode}</span>
+                    <div className="flex items-center space-x-3">
+                      <p className="text-[10px] text-slate-400 italic truncate max-w-[150px]">{p.reference || 'No ref'}</p>
+                      {isAdmin && (
+                        <button onClick={() => onDelete(p.id)} className="p-2 bg-rose-50 text-rose-500 rounded-lg text-xs">🗑️</button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              );
+            })
+          )}
         </div>
       </div>
     </div>

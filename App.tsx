@@ -8,6 +8,7 @@ import AdminPanel from './components/AdminPanel';
 import EmployeeManagement from './components/EmployeeManagement';
 import ProjectManagement from './components/ProjectManagement';
 import PayoutManager from './components/PayoutManager';
+import MyProfile from './components/MyProfile';
 import Login from './components/Login';
 import { AppView, AttendanceEntry, AdvanceEntry, Employee, Project, AuthState, PayoutEntry } from './types';
 import * as storage from './services/storage';
@@ -38,6 +39,15 @@ const App: React.FC = () => {
   useEffect(() => {
     if (employees.length > 0) storage.saveEmployees(employees);
   }, [employees]);
+
+  // Set initial view based on role
+  useEffect(() => {
+    if (auth.role === 'worker') {
+      setView('my-profile');
+    } else if (auth.role) {
+      setView('dashboard');
+    }
+  }, [auth.role]);
   useEffect(() => {
     storage.saveProjects(projects);
   }, [projects]);
@@ -128,7 +138,7 @@ const App: React.FC = () => {
   };
 
   if (!auth.role) {
-    return <Login employees={employees} onLogin={setAuth} />;
+    return <Login employees={employees} onLogin={setAuth} onUpdateEmployee={updateEmployee} />;
   }
 
   const renderContent = () => {
@@ -202,6 +212,16 @@ const App: React.FC = () => {
             onAdd={addEmployee} 
             onUpdate={updateEmployee} 
             onDelete={deleteEmployee} 
+          />
+        );
+      case 'my-profile':
+        return (
+          <MyProfile
+            auth={auth}
+            employees={employees}
+            attendance={attendance}
+            advances={advances}
+            payouts={payouts}
           />
         );
       default:

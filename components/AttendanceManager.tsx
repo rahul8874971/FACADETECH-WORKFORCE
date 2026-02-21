@@ -81,13 +81,13 @@ const AttendanceManager: React.FC<AttendanceManagerProps> = ({ employees, projec
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
-          <div className="lg:col-span-2">
+        <form onSubmit={handleSubmit} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-5">
+          <div className="sm:col-span-2 lg:col-span-2">
             <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Employee Name</label>
             <select
               value={employeeId}
               onChange={(e) => { setEmployeeId(e.target.value); setError(''); }}
-              className="w-full border-slate-200 rounded-xl bg-slate-50 focus:bg-white focus:ring-2 focus:ring-blue-500 transition-all font-bold py-3"
+              className="w-full border-slate-200 rounded-xl bg-slate-50 focus:bg-white focus:ring-2 focus:ring-blue-500 transition-all font-bold py-2.5 md:py-3 text-sm md:text-base"
               required
             >
               <option value="">Select Staff</option>
@@ -100,7 +100,7 @@ const AttendanceManager: React.FC<AttendanceManagerProps> = ({ employees, projec
             <select
               value={projectId}
               onChange={(e) => setProjectId(e.target.value)}
-              className="w-full border-slate-200 rounded-xl bg-slate-50 focus:bg-white focus:ring-2 focus:ring-blue-500 transition-all font-bold py-3"
+              className="w-full border-slate-200 rounded-xl bg-slate-50 focus:bg-white focus:ring-2 focus:ring-blue-500 transition-all font-bold py-2.5 md:py-3 text-sm md:text-base"
               required
             >
               <option value="">Select Project</option>
@@ -116,17 +116,17 @@ const AttendanceManager: React.FC<AttendanceManagerProps> = ({ employees, projec
               max={today}
               disabled={!isAdmin}
               onChange={(e) => setDate(e.target.value)}
-              className="w-full border-slate-200 rounded-xl bg-slate-50 disabled:text-slate-400 focus:bg-white focus:ring-2 focus:ring-blue-500 font-bold py-3"
+              className="w-full border-slate-200 rounded-xl bg-slate-50 disabled:text-slate-400 focus:bg-white focus:ring-2 focus:ring-blue-500 font-bold py-2.5 md:py-3 text-sm md:text-base"
               required
             />
           </div>
 
           <div>
-            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Attendance Status</label>
+            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Status</label>
             <select
               value={status}
               onChange={(e) => setStatus(e.target.value as AttendanceStatus)}
-              className="w-full border-slate-200 rounded-xl bg-slate-50 focus:bg-white focus:ring-2 focus:ring-blue-500 transition-all font-bold py-3"
+              className="w-full border-slate-200 rounded-xl bg-slate-50 focus:bg-white focus:ring-2 focus:ring-blue-500 transition-all font-bold py-2.5 md:py-3 text-sm md:text-base"
               required
             >
               <option value="present">Present (Full Day)</option>
@@ -143,15 +143,15 @@ const AttendanceManager: React.FC<AttendanceManagerProps> = ({ employees, projec
               value={overtimeHours}
               min={0}
               onChange={(e) => setOvertimeHours(Number(e.target.value))}
-              className="w-full border-slate-200 rounded-xl bg-slate-50 focus:bg-white focus:ring-2 focus:ring-blue-500 transition-all font-bold py-3"
+              className="w-full border-slate-200 rounded-xl bg-slate-50 focus:bg-white focus:ring-2 focus:ring-blue-500 transition-all font-bold py-2.5 md:py-3 text-sm md:text-base"
               required
             />
           </div>
 
-          <div className="lg:col-span-2 flex items-end">
+          <div className="sm:col-span-2 lg:col-span-2 flex items-end">
             <button
               type="submit"
-              className="w-full bg-slate-900 text-white py-3.5 rounded-xl hover:bg-black transition font-black text-xs uppercase tracking-widest shadow-xl shadow-slate-200"
+              className="w-full bg-slate-900 text-white py-3 md:py-3.5 rounded-xl hover:bg-black transition font-black text-[10px] md:text-xs uppercase tracking-widest shadow-xl shadow-slate-200"
             >
               Mark Attendance
             </button>
@@ -165,7 +165,9 @@ const AttendanceManager: React.FC<AttendanceManagerProps> = ({ employees, projec
              Activity Registry
            </h4>
         </div>
-        <div className="overflow-x-auto">
+
+        {/* Desktop Table */}
+        <div className="hidden md:block overflow-x-auto">
           <table className="w-full text-left">
             <thead>
               <tr className="bg-slate-50 border-b border-slate-200">
@@ -219,6 +221,46 @@ const AttendanceManager: React.FC<AttendanceManagerProps> = ({ employees, projec
               )}
             </tbody>
           </table>
+        </div>
+
+        {/* Mobile Card List */}
+        <div className="md:hidden divide-y divide-slate-100">
+          {visibleEntries.length === 0 ? (
+            <div className="p-10 text-center text-slate-400 italic text-sm">No attendance logs found.</div>
+          ) : (
+            visibleEntries.slice().reverse().map(entry => {
+              const emp = employees.find(e => e.id === entry.employeeId);
+              const proj = projects.find(p => p.id === entry.projectId);
+              return (
+                <div key={entry.id} className="p-4 space-y-3">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <p className="font-bold text-slate-900">{emp?.name || 'Unknown'}</p>
+                      <p className="text-[10px] text-slate-400 font-bold uppercase tracking-tight">{proj?.name || 'No Project'}</p>
+                    </div>
+                    <span className={`px-2 py-1 rounded-lg text-[9px] font-black uppercase border ${getStatusBadge(entry.status)}`}>
+                      {entry.status}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center text-xs">
+                    <div className="flex space-x-4">
+                      <div>
+                        <span className="text-slate-400 font-bold uppercase text-[8px] block">Date</span>
+                        <span className="font-black text-slate-700">{entry.date}</span>
+                      </div>
+                      <div>
+                        <span className="text-slate-400 font-bold uppercase text-[8px] block">Hours</span>
+                        <span className="font-black text-slate-700">{entry.regularHours}h {entry.overtimeHours > 0 && <span className="text-amber-600">+{entry.overtimeHours}h OT</span>}</span>
+                      </div>
+                    </div>
+                    {isAdmin && (
+                      <button onClick={() => onDelete(entry.id)} className="p-2 bg-rose-50 text-rose-500 rounded-lg">🗑️</button>
+                    )}
+                  </div>
+                </div>
+              );
+            })
+          )}
         </div>
       </div>
     </div>

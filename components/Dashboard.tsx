@@ -143,29 +143,29 @@ const Dashboard: React.FC<DashboardProps> = ({ attendance, advances, employees, 
       )}
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
         {[
           { label: 'Work Hours', value: (totalRegularHours + totalOTHours).toFixed(1), icon: '⏱️', color: 'text-blue-600' },
           { label: 'OT Hours', value: totalOTHours.toFixed(1), icon: '⚡', color: 'text-amber-600' },
           { label: 'Advances Paid', value: `₹${totalAdvances.toLocaleString()}`, icon: '💸', color: 'text-rose-600', hide: !hasFullFinancials },
           { label: 'Net Payable', value: `₹${Math.round(totalSalaryEstimate - totalAdvances).toLocaleString()}`, icon: '💰', color: 'text-emerald-600', hide: !hasFullFinancials },
         ].filter(s => !s.hide).map((stat, i) => (
-          <div key={i} className="bg-white p-6 rounded-xl shadow-sm border border-slate-200 hover:border-blue-200 transition-colors group">
+          <div key={i} className="bg-white p-4 md:p-6 rounded-2xl shadow-sm border border-slate-200 hover:border-blue-200 transition-colors group">
             <div className="flex justify-between items-start">
-              <span className="text-2xl group-hover:scale-110 transition-transform">{stat.icon}</span>
-              <span className={`text-2xl font-black ${stat.color}`}>{stat.value}</span>
+              <span className="text-xl md:text-2xl group-hover:scale-110 transition-transform">{stat.icon}</span>
+              <span className={`text-lg md:text-2xl font-black ${stat.color}`}>{stat.value}</span>
             </div>
-            <p className="text-slate-500 text-[10px] mt-2 font-bold uppercase tracking-wider">{stat.label}</p>
+            <p className="text-slate-500 text-[8px] md:text-[10px] mt-2 font-bold uppercase tracking-wider">{stat.label}</p>
           </div>
         ))}
       </div>
 
       {/* Charts Section */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
           <div className="flex justify-between items-center mb-6">
-            <h3 className="font-bold text-slate-800">Project Labor Costing</h3>
-            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Financial Metric</span>
+            <h3 className="font-bold text-slate-800">Labor Costing</h3>
+            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Financials</span>
           </div>
           <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
@@ -188,35 +188,37 @@ const Dashboard: React.FC<DashboardProps> = ({ attendance, advances, employees, 
           </div>
         </div>
 
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
           <div className="flex justify-between items-center mb-6">
             <h3 className="font-bold text-slate-800">Man-Hour Utilization</h3>
-            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Efficiency Metric</span>
+            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Efficiency</span>
           </div>
-          <div className="h-64 flex items-center justify-center">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={projectStats}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={60}
-                  outerRadius={80}
-                  paddingAngle={5}
-                  dataKey="hours"
-                >
-                  {projectStats.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={COLORS_CHART[index % COLORS_CHART.length]} />
-                  ))}
-                </Pie>
-                <Tooltip />
-              </PieChart>
-            </ResponsiveContainer>
-            <div className="flex flex-col space-y-2 ml-4">
+          <div className="h-64 flex flex-col sm:flex-row items-center justify-center">
+            <div className="w-full sm:w-1/2 h-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={projectStats}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={60}
+                    outerRadius={80}
+                    paddingAngle={5}
+                    dataKey="hours"
+                  >
+                    {projectStats.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={COLORS_CHART[index % COLORS_CHART.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+            <div className="flex flex-wrap sm:flex-col gap-3 mt-4 sm:mt-0 sm:ml-4 justify-center">
               {projectStats.map((p, i) => (
-                <div key={i} className="flex items-center space-x-2 text-xs">
-                  <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: COLORS_CHART[i % COLORS_CHART.length] }}></div>
-                  <span className="text-slate-600 font-medium">{p.name} ({p.hours}h)</span>
+                <div key={i} className="flex items-center space-x-2 text-[10px] md:text-xs">
+                  <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: COLORS_CHART[i % COLORS_CHART.length] }}></div>
+                  <span className="text-slate-600 font-medium whitespace-nowrap">{p.name} ({p.hours}h)</span>
                 </div>
               ))}
             </div>
@@ -225,22 +227,24 @@ const Dashboard: React.FC<DashboardProps> = ({ attendance, advances, employees, 
       </div>
 
       {/* Workforce Summary Table */}
-      <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+      <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
         <div className="p-6 border-b border-slate-100 flex flex-col sm:flex-row justify-between items-start sm:items-center bg-slate-50/50 gap-4">
           <div>
-            <h3 className="font-bold text-slate-800">Workforce Payroll Statement</h3>
-            <p className="text-xs text-slate-500 font-medium">Detailed breakdown of earnings, overtime, and deductions.</p>
+            <h3 className="font-bold text-slate-800">Payroll Statement</h3>
+            <p className="text-xs text-slate-500 font-medium">Earnings, overtime, and deductions.</p>
           </div>
           {hasFullFinancials && (
             <button 
               onClick={handleExport}
-              className="bg-white border border-slate-200 text-slate-700 px-4 py-2 rounded-lg text-xs font-bold hover:bg-slate-50 shadow-sm flex items-center space-x-2"
+              className="w-full sm:w-auto bg-white border border-slate-200 text-slate-700 px-4 py-2 rounded-xl text-xs font-bold hover:bg-slate-50 shadow-sm flex items-center justify-center space-x-2"
             >
-              <span>📥</span> <span>Export Statement (CSV)</span>
+              <span>📥</span> <span>Export CSV</span>
             </button>
           )}
         </div>
-        <div className="overflow-x-auto">
+
+        {/* Desktop Table */}
+        <div className="hidden md:block overflow-x-auto">
           <table className="w-full text-left border-collapse min-w-[800px]">
             <thead>
               <tr className="bg-slate-100/50 border-b border-slate-200">
@@ -296,6 +300,46 @@ const Dashboard: React.FC<DashboardProps> = ({ attendance, advances, employees, 
               ))}
             </tbody>
           </table>
+        </div>
+
+        {/* Mobile Card List */}
+        <div className="md:hidden divide-y divide-slate-100">
+          {employeeStats.map(stat => (
+            <div key={stat.id} className="p-4 space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center font-bold text-slate-400 overflow-hidden">
+                    {stat.photo ? <img src={stat.photo} className="w-full h-full object-cover" /> : stat.name.charAt(0)}
+                  </div>
+                  <div>
+                    <p className="font-bold text-slate-900 leading-tight">{stat.name}</p>
+                    <p className="text-[10px] text-slate-400 font-bold uppercase">{stat.role}</p>
+                  </div>
+                </div>
+                {hasFullFinancials && (
+                  <div className="text-right">
+                    <p className="font-black text-emerald-600 text-sm">₹{Math.round(stat.totalSalaryEarned - stat.totalAdvance).toLocaleString()}</p>
+                    <p className="text-[8px] text-slate-400 font-bold uppercase tracking-tighter">Net Payable</p>
+                  </div>
+                )}
+              </div>
+              
+              <div className="grid grid-cols-3 gap-2">
+                <div className="p-2 bg-slate-50 rounded-xl text-center">
+                  <p className="text-[8px] font-black text-slate-400 uppercase tracking-tighter">Days</p>
+                  <p className="text-xs font-black text-slate-700">{stat.totalDays}</p>
+                </div>
+                <div className="p-2 bg-slate-50 rounded-xl text-center">
+                  <p className="text-[8px] font-black text-slate-400 uppercase tracking-tighter">OT Hrs</p>
+                  <p className="text-xs font-black text-slate-700">{stat.totalOT.toFixed(1)}</p>
+                </div>
+                <div className="p-2 bg-slate-50 rounded-xl text-center">
+                  <p className="text-[8px] font-black text-slate-400 uppercase tracking-tighter">Advance</p>
+                  <p className="text-xs font-black text-rose-600">₹{stat.totalAdvance.toLocaleString()}</p>
+                </div>
+              </div>
+            </div>
+          ))}
         </div>
       </div>
     </div>
